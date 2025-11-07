@@ -109,15 +109,13 @@ body {
 }
 
 .header-p {
-  font-size: 1.5rem;
+  font-size: 3rem;
   text-align: center;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 button {
   border: none;
-  width: 15rem;
-  height: 4rem;
   background-color: rgba(32, 30, 30, 0.726);
   color: #ff8695;
   font-size: 2rem;
@@ -125,6 +123,7 @@ button {
   border-radius: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  padding: 1rem 3rem;
 }
 
 /* Enhanced button states for better visual feedback */
@@ -221,8 +220,46 @@ img:hover {
 .hidden {
   display: none;
 }
-
-@media (min-width: 600px) {
+@media (min-width: 600px) and (max-width: 899px) {
+  .header-head {
+    font-size: 4.5rem;
+  }
+  .caption,
+  .header-p {
+    font-size: 2rem;
+  }
+  .column {
+    display: grid;
+    grid-template-columns: repeat(8, 50%);
+  }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  .header-head {
+    font-size: 4.8rem;
+  }
+  .caption,
+  .header-p {
+    font-size: 2.1rem;
+  }
+  .column {
+    display: grid;
+    grid-template-columns: repeat(10, 40%);
+  }
+}
+@media (max-width: 599px) {
+  .header-head {
+    font-size: 3.5rem;
+  }
+  .caption,
+  .header-p {
+    font-size: 1.8rem;
+  }
+  .column {
+    display: grid;
+    grid-template-columns: repeat(6, 70%);
+  }
+}
+ @media (min-width: 600px) {
   body {
     padding: 4rem;
   }
