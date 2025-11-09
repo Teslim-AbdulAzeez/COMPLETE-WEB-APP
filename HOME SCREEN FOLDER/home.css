@@ -43,14 +43,18 @@ body {
 }
 .header-nav {
   display: flex;
-  gap: 3.2rem;
+  gap: 3rem;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x-mandatory;
+  scroll-behavior: smooth;
 }
 .header_unordered_list_items {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 3.2rem;
+  gap: 3rem;
 }
 .header_nav_button {
   display: inline-block;

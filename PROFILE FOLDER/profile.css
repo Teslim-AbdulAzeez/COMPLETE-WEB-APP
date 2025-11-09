@@ -15,6 +15,9 @@
   font-family: "Montserrat", sans-serif;
   padding: 0;
 }
+html {
+  font-size: 62.5%;
+}
 .header {
   position: fixed;
   display: flex;
@@ -23,42 +26,46 @@
   left: 0;
   right: 0;
   justify-content: space-between;
-  padding: 5px 20px;
+  padding: 0.5rem 2rem;
   align-items: center;
 }
 .image_logo {
-  height: 50px;
-  width: 50px;
+  height: 5rem;
+  width: 5rem;
   border-radius: 10%;
 }
 .header_logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 0.3rem;
 }
 .header_heading {
-  font-size: 27px;
+  font-size: 2.7rem;
   color: black;
 }
 .header-nav {
   display: flex;
-  gap: 32px;
+  gap: 3rem;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x-mandatory;
+  scroll-behavior: smooth;
 }
 .header_unordered_list_items {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 32px;
+  gap: 3rem;
 }
 .header_nav_button {
   display: inline-block;
-  padding: 10px 20px;
+  padding: 1rem 2rem;
   border: 2px solid rgb(247, 237, 237);
   background-color: var(--black);
   color: white;
-  border-radius: 10px;
+  border-radius: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.5s;
@@ -81,76 +88,78 @@
 body {
   background-color: rgba(32, 30, 30, 0.726);
   max-height: 100%;
-  padding-bottom: 22px;
-  padding-left: 22px;
-  padding-right: 22px;
+  padding-bottom: 2.2rem;
+  /* padding-left: 2.2rem; */
+  /* padding-right: 2.2rem; */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  font-size: 1.6rem;
 }
 
 .container {
-  width: 65%;
-  margin-top: 80px;
-  padding: 20px 20px;
+  width: 66%;
+  margin-top: 8rem;
+  padding: 2rem 2rem;
 }
 h1.profile_title {
-  font-size: 34px;
+  font-size: 3.4rem;
   font-weight: 800;
-  margin-bottom: 6px;
+  margin-bottom: 0.6rem;
   color: rgb(247, 237, 237);
 }
 .subtitle {
   color: var(--black);
-  margin-bottom: 22px;
-  font-size: 15px;
+  margin-bottom: 2.2rem;
+  font-size: 1.5rem;
   font-weight: 500;
 }
 
 .card {
   background: var(--card);
   border-radius: var(--radius);
-  padding: 22px;
-  box-shadow: 0 8px 18px rgba(13, 13, 13, 0.06);
+  padding: 2.5rem;
+  box-shadow: 0 20px 25px 5px rgb(0 0 0 / 0.1), 0 8px 10px 6px rgb(0 0 0 / 0.1);
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .card h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 1.8rem;
   font-weight: 700;
 }
 .section-desc {
   color: var(--muted);
-  margin-top: 8px;
-  margin-bottom: 18px;
+  margin-top: 0.8rem;
+  margin-bottom: 1.8rem;
   font-weight: 500;
 }
 
 .info-row {
   display: flex;
   flex-direction: column;
-  margin-bottom: 12px;
-  font-size: 15px;
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
 }
 .info-row .label {
   color: var(--muted);
   font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 4px;
+  font-size: 1.3rem;
+  margin-bottom: 0.4rem;
 }
 .info-row .value {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 1.6rem;
 }
 
 input,
 select {
   width: 100%;
-  padding: 12px 14px;
-  font-size: 15px;
-  border-radius: 12px;
+  padding: 1.2rem 1.4rem;
+  font-size: 1.5rem;
+  border-radius: 1.2rem;
   border: 1px solid #e6e6e6;
   background: #fff;
   outline: none;
@@ -158,8 +167,8 @@ select {
 
 .button-row {
   display: flex;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 1.2rem;
+  margin-top: 1.8rem;
 }
 .primary-btn {
   display: block;
@@ -167,8 +176,8 @@ select {
   margin: 0 auto;
   background: #0b0b0b;
   color: #fff;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 1.2rem 1.4rem;
+  border-radius: 1.2rem;
   border: none;
   font-weight: 600;
   cursor: pointer;
@@ -179,8 +188,36 @@ select {
   background: #fff;
   border: 1px solid #e6e6e6;
   color: #111;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 1.2rem;
+  border-radius: 1.2rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 520px) {
+  html {
+    font-size: 57%;
+  }
+}
+
+@media (max-width: 460px) {
+  html {
+    font-size: 52%;
+  }
+}
+@media (max-width: 420px) {
+  html {
+    font-size: 49%;
+  }
+}
+@media (max-width: 400px) {
+  html {
+    font-size: 44%;
+  }
+}
+@media (max-width: 340px) {
+  html {
+    font-size: 40%;
+  }
 }

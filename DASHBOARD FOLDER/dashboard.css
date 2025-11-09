@@ -44,14 +44,18 @@ body {
 }
 .header-nav {
   display: flex;
-  gap: 3.2rem;
+  gap: 3rem;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x-mandatory;
+  scroll-behavior: smooth;
 }
 .header_unordered_list_items {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 3.2rem;
+  gap: 3rem;
 }
 .header_nav_button {
   display: inline-block;
@@ -319,7 +323,8 @@ h1 {
   font-size: 1em;
   transition: border 0.3s ease;
 }
-input, select {
+input,
+select {
   background-color: black;
   color: white;
   font-weight: 500;
@@ -421,7 +426,8 @@ input, select {
 /* Responsive Design - Mobile */
 @media (max-width: 768px) {
   body {
-    padding: 1.5rem;
+    /* padding: 1.5rem; */
+    padding: 10rem 1.5rem 1.5rem 1.5rem;
   }
 
   .container {
@@ -507,7 +513,9 @@ input, select {
 /* Responsive Design - Small Mobile */
 @media (max-width: 480px) {
   body {
-    padding: 1rem;
+    body {
+      padding: 10rem 1.5rem 1.5rem 1.5rem;
+    }
   }
 
   header {

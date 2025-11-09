@@ -4,12 +4,11 @@
   box-sizing: border-box;
   font-family: "Montserrat", sans-serif;
 }
-
 body {
   background-color: rgba(32, 30, 30, 0.726);
   height: 100%;
   width: 100%;
-  padding: 25px;
+  padding: 2.5rem 3rem;
   font-size: 1.6rem;
 }
 html {
@@ -44,14 +43,18 @@ html {
 }
 .header-nav {
   display: flex;
-  gap: 3.2rem;
+  gap: 3rem;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x-mandatory;
+  scroll-behavior: smooth;
 }
 .header_unordered_list_items {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 3.2rem;
+  gap: 3rem;
 }
 .header_nav_button {
   display: inline-block;
@@ -238,4 +241,15 @@ html {
 
 .hidden {
   display: none;
+}
+
+@media (max-width: 450px) {
+  html {
+    font-size: 45%;
+  }
+}
+@media (max-width: 320px) {
+  html {
+    font-size: 40%;
+  }
 }
