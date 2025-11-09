@@ -23,13 +23,14 @@ body {
   left: 0;
   right: 0;
   justify-content: space-between;
-  padding: 0.5rem 2rem;
+  padding: 0.5rem 1rem;
   align-items: center;
 }
 .image_logo {
   height: 5rem;
   width: 5rem;
   border-radius: 10%;
+  border: 1px solid  black;
 }
 .header_logo {
   display: flex;
@@ -38,23 +39,24 @@ body {
   gap: 3px;
 }
 .header_heading {
-  font-size: 2.7rem;
+  font-size: 3rem;
   color: black;
 }
 .header-nav {
   display: flex;
-  gap: 3rem;
+  gap: 2rem;
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x-mandatory;
   scroll-behavior: smooth;
+  font-size: 2rem;
 }
 .header_unordered_list_items {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 3rem;
+  gap: 2rem;
 }
 .header_nav_button {
   display: inline-block;
@@ -307,6 +309,9 @@ i {
     margin-left: 0;
     margin-top: 1rem;
   }
+  .container{
+    margin-top: 15rem;
+  }
 }
 @media (max-width: 600px) {
   html {
@@ -315,6 +320,9 @@ i {
   .both_container {
     flex-direction: column;
     gap: 2rem;
+  }
+  .container{
+    margin-top: 15rem;
   }
   .daily-checkin,
   .suggestion {
@@ -333,6 +341,9 @@ i {
 @media (max-width: 420px) {
   html {
     font-size: 50%;
+  }
+  .container{
+    margin-top: 14rem;
   }
   .header_heading {
     font-size: 2.2rem;
