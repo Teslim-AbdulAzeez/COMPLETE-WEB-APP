@@ -1,240 +1,271 @@
 // ============================================
-// SESSION CHECK
+// REAL LOGMEAL.JS SCRIPT
 // ============================================
-function checkUserSession() {
-  const storedUser = localStorage.getItem("currentUser");
-  if (!storedUser) {
-    console.log("No user session found. Redirecting to login page.");
-    window.location.href = "../SIGN IN FOLDER/sign_in.html";
+
+// YOUR LIVE VERCEL BACKEND URL
+const API_BASE_URL = "https://nutri-track-api.vercel.app/api";
+
+// --- DOM ELEMENTS ---
+const manualForm = document.querySelector(".meal-form");
+const manualFormButton = document.querySelector(".log-meal-btn");
+const quickAddContainer = document.querySelector(".food-suggestions");
+const loggedMealContainer = document.querySelector(".logged-meal-stat");
+const noMealsMessage = document.querySelector(".logged-meals");
+const mealCountParagraph = document.querySelector(".logged-paragraph");
+const logoutBtn = document.getElementById("logoutBtn");
+
+// Manual Form Inputs
+const mealNameInput = document.getElementById("meal-name");
+const mealTypeInput = document.getElementById("meal-type");
+const caloriesInput = document.getElementById("calories");
+const proteinInput = document.getElementById("protein");
+const carbsInput = document.getElementById("carbs");
+const fatsInput = document.getElementById("fats");
+
+// --- FUNCTIONS ---
+
+function getAuthToken() {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    window.location.href = "../SIGN IN FOLDER/login.html";
+  }
+  return token;
+}
+
+/**
+ * Fetches all foods from our backend and builds the "Quick Add" list
+ */
+async function loadQuickAddFoods() {
+  const token = getAuthToken();
+  if (!token) return;
+  try {
+    const response = await fetch(`${API_BASE_URL}/foods`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch foods');
+    const foods = await response.json();
+    
+    quickAddContainer.innerHTML = `
+      <div class="text-group">
+        <h2 class="suggestion-heading">Nigerian Foods</h2>
+        <p class="suggestion-paragraph">Quickly add popular meals</p>
+      </div>
+    `;
+    foods.forEach(food => {
+      const foodElement = document.createElement('div');
+      foodElement.className = 'suggested-food';
+      foodElement.dataset.foodId = food._id;
+      foodElement.innerHTML = `
+        <p class="food-suggested">${food.name}</p>
+        <p class="suggested-nutrient paragraph">${food.calories} cal</p>
+      `;
+      foodElement.addEventListener('click', () => {
+        logQuickMeal(food._id); // Pass the ID
+      });
+      quickAddContainer.appendChild(foodElement);
+    });
+  } catch (error) {
+    console.error('Error loading quick-add foods:', error);
   }
 }
-checkUserSession();
 
-const logoutBtn = document.getElementById("logoutBtn");
-// ============================================
-// GET USER DATA FROM LOCALSTORAGE
-// ============================================
-function getCurrentUser() {
-  const userData = JSON.parse(localStorage.getItem("currentUser"));
-  return userData;
+/**
+ * Fetches all of the user's logged meals for *today*
+ */
+async function loadTodaysMeals() {
+  const token = getAuthToken();
+  if (!token) return;
+
+  try {
+    // This endpoint now returns "populated" meal data
+    const response = await fetch(`${API_BASE_URL}/meals/me`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch meals');
+    
+    const allMeals = await response.json();
+    
+    const today = new Date().toDateString();
+    const todaysMeals = allMeals.filter(meal => new Date(meal.date).toDateString() === today);
+
+    loggedMealContainer.innerHTML = '';
+    
+    if (todaysMeals.length === 0) {
+      loggedMealContainer.innerHTML = '<p class="logged-meals paragraph">No Meals Logged Yet</p>';
+    } else {
+      todaysMeals.forEach(meal => {
+        addMealToDOM(meal); // Send the whole meal log
+      });
+    }
+    updateMealCount();
+
+  } catch (error) {
+    console.error('Error loading today\'s meals:', error);
+  }
 }
 
-// ============================================
-// GET USER-SPECIFIC STORAGE KEY
-// ============================================
-function getUserMealsKey() {
-  const user = getCurrentUser();
-  return user ? `meals_${user.username}` : "allMeals";
+/**
+ * Logs a meal when a "Quick Add" item is clicked
+ */
+async function logQuickMeal(foodId) {
+  const token = getAuthToken();
+  try {
+    const response = await fetch(`${API_BASE_URL}/meals/log`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        foodId: foodId, // Send the ID
+        servingSize: 1,
+        mealType: "Snack" // Default type for quick-add
+      })
+    });
+    if (!response.ok) throw new Error('Failed to log meal');
+    loadTodaysMeals(); // Reload the list
+  } catch (error) {
+    console.error('Error logging quick meal:', error);
+    alert('There was an error logging your meal.');
+  }
 }
 
-// ============================================
-// LOG MEAL PAGE SCRIPT
-// ============================================
-document.addEventListener("DOMContentLoaded", () => {
-  const foodDatabase = {
-    "Jollof Rice": { meal: "lunch", cal: 380, pro: 7, carb: 65, fat: 10 },
-    "Egusi Soup": { meal: "dinner", cal: 330, pro: 15, carb: 10, fat: 25 },
-    "Pepper Soup": { meal: "dinner", cal: 150, pro: 18, carb: 5, fat: 6 },
-    Fufu: { meal: "dinner", cal: 200, pro: 1, carb: 48, fat: 1 },
-    "Moi Moi": { meal: "breakfast", cal: 150, pro: 10, carb: 18, fat: 5 },
-    Akara: { meal: "breakfast", cal: 180, pro: 8, carb: 20, fat: 8 },
-    Suya: { meal: "snacks", cal: 220, pro: 25, carb: 3, fat: 12 },
-    "Pounded Yam": { meal: "lunch", cal: 220, pro: 1, carb: 50, fat: 1 },
-    "Garri & Soup": { meal: "dinner", cal: 500, pro: 10, carb: 70, fat: 20 },
-    "Beans & Plantain": { meal: "lunch", cal: 450, pro: 15, carb: 75, fat: 10 },
-    "Chin Chin": { meal: "snacks", cal: 400, pro: 6, carb: 55, fat: 18 },
-    "Meat Pie": { meal: "snacks", cal: 300, pro: 10, carb: 30, fat: 16 },
-    "Okra Soup": { meal: "dinner", cal: 100, pro: 5, carb: 10, fat: 5 },
-    Amala: { meal: "lunch", cal: 170, pro: 1, carb: 40, fat: 1 },
+/**
+ * Logs a meal from the MANUAL "Add New Meal" form
+ */
+async function logManualMeal(event) {
+  event.preventDefault(); // Stop the form from reloading the page
+  const token = getAuthToken();
+  
+  const meal = {
+    customName: mealNameInput.value,
+    mealType: mealTypeInput.value,
+    calories: caloriesInput.value,
+    protein_g: proteinInput.value || 0,
+    carbs_g: carbsInput.value || 0,
+    fats_g: fatsInput.value || 0,
   };
 
-  const form = document.querySelector(".meal-form");
-
-  const mealNameInput = document.getElementById("meal-name");
-  const mealTypeInput = document.getElementById("meal-type");
-  const caloriesInput = document.getElementById("calories");
-  const proteinInput = document.getElementById("protein");
-  const carbsInput = document.getElementById("carbs");
-  const fatsInput = document.getElementById("fats");
-
-  const loggedMealContainer = document.querySelector(".logged-meal-stat");
-  const noMealsMessage = document.querySelector(".logged-meals");
-  const mealCountParagraph = document.querySelector(".logged-paragraph");
-
-  const suggestions = document.querySelectorAll(".suggested-food");
-
-  function saveMealToLocalStorage(meal) {
-    const today = new Date().toDateString();
-    const userMealsKey = getUserMealsKey();
-    const allMeals = JSON.parse(localStorage.getItem(userMealsKey)) || {};
-
-    if (!allMeals[today]) {
-      allMeals[today] = [];
-    }
-
-    // Add unique ID to meal
-    meal.id = Date.now();
-    allMeals[today].push(meal);
-
-    localStorage.setItem(userMealsKey, JSON.stringify(allMeals));
-    console.log("✓ Meal saved to localStorage:", meal);
+  if (!meal.customName || !meal.calories || !meal.mealType) {
+    alert("Please fill in at least Meal Name, Meal Type, and Calories.");
+    return;
   }
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const meal = {
-      name: mealNameInput.value,
-      mealType: mealTypeInput.value,
-      calories: caloriesInput.value,
-      protein: proteinInput.value,
-      carbs: carbsInput.value,
-      fats: fatsInput.value,
-    };
-
-    if (!meal.name) {
-      console.error("Meal name is required!");
-      return;
-    }
-
-    addMealToDOM(meal);
-    saveMealToLocalStorage(meal);
-    resetForm();
-    updateMealCount();
-  });
-
-  suggestions.forEach((suggestion) => {
-    suggestion.addEventListener("click", () => {
-      const foodName = suggestion.querySelector(".food-suggested").textContent;
-      const foodData = foodDatabase[foodName];
-
-      if (foodData) {
-        mealNameInput.value = foodName;
-        mealTypeInput.value = foodData.meal;
-        caloriesInput.value = foodData.cal;
-        proteinInput.value = foodData.pro;
-        carbsInput.value = foodData.carb;
-        fatsInput.value = foodData.fat;
-      }
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/meals/log`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(meal) // Send the custom meal object
     });
-  });
 
+    if (!response.ok) throw new Error('Failed to log custom meal');
+    
+    loadTodaysMeals(); // Reload the list
+    manualForm.reset(); // Clear the form
+
+  } catch (error) {
+    console.error('Error logging manual meal:', error);
+    alert('There was an error logging your custom meal.');
+  }
+}
+
+
+/**
+ * Adds a meal to the "Today's Meals" list in the HTML
+ */
+function addMealToDOM(meal) {
+  const mealCard = document.createElement("div");
+  mealCard.classList.add("logged-meal-card");
+  mealCard.setAttribute("data-meal-id", meal._id);
+
+  mealCard.style = "display: flex; justify-content: space-between; align-items: center; background-color: rgb(245, 245, 245); padding: 1.5rem; border-radius: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); font-size: 1rem;";
+
+  // The .populate() in the backend makes this logic simple
+  // We check if meal.food exists. If it does, use its name.
+  // If not, it's a custom meal, so use meal.customName.
+  const mealName = meal.food ? meal.food.name : meal.customName;
+  const calories = (meal.calories || 0).toFixed(0);
+  
+  const textDiv = document.createElement("div");
+  textDiv.style = "flex: 1; text-align: left;";
+  textDiv.innerHTML = `
+    <h4 style="margin: 0; font-size: 1.5rem; color: #333;">${mealName}</h4>
+    <p style="font-size: 1rem; color: #555; text-transform: capitalize; margin: 0.5rem 0;">${meal.mealType}</p>
+    <p style="font-size: 0.9rem; color: #333; margin: 0;">
+        ${calories} cal
+    </p>
+  `;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.classList.add("delete-btn");
+  deleteButton.textContent = "Delete";
+  deleteButton.style = "padding: 8px 12px; background-color: #ff4d4d; color: white; border: none; border-radius: 15px; cursor: pointer; margin-left: 15px;";
+  deleteButton.dataset.id = meal._id;
+
+  mealCard.appendChild(textDiv);
+  mealCard.appendChild(deleteButton);
+  loggedMealContainer.appendChild(mealCard);
+}
+
+/**
+ * Deletes a meal when the "Delete" button is clicked
+ */
+async function deleteMeal(mealId) {
+  const token = getAuthToken();
+  if (!mealId) return;
+  try {
+    const response = await fetch(`${API_BASE_URL}/meals/${mealId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to delete meal');
+    loadTodaysMeals(); // Reload the list
+  } catch (error) {
+    console.error('Error deleting meal:', error);
+    alert('Could not delete meal.');
+  }
+}
+
+/**
+ * Updates the meal count text
+ */
+function updateMealCount() {
+  const mealCount = loggedMealContainer.querySelectorAll(".logged-meal-card").length;
+  if (mealCount === 0) {
+    mealCountParagraph.textContent = "0 meals logged";
+  } else {
+    mealCountParagraph.textContent = `${mealCount} meal${mealCount > 1 ? "s" : ""} logged`;
+  }
+}
+
+// --- INITIALIZE THE PAGE ---
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. RE-ENABLE the "manual" form and hook it up
+  manualForm.addEventListener('submit', logManualMeal);
+  
+  // 2. Load the real food lists
+  loadQuickAddFoods();
+  loadTodaysMeals();
+
+  // 3. Set up logout
+  logoutBtn.onclick = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("currentUser");
+    window.location.href = "../SIGN IN FOLDER/login.html";
+  };
+  
+  // 4. Add a single event listener for all delete buttons
   loggedMealContainer.addEventListener("click", (event) => {
     if (event.target.classList.contains("delete-btn")) {
-      const mealCard = event.target.closest(".logged-meal-card");
-      const mealId = mealCard.getAttribute("data-meal-id");
+      const mealId = event.target.dataset.id;
       if (mealId) {
-        deleteMealFromLocalStorage(Number.parseInt(mealId));
+        deleteMeal(mealId);
       }
-      mealCard.remove();
-      updateMealCount();
     }
   });
-
-  function deleteMealFromLocalStorage(mealId) {
-    const today = new Date().toDateString();
-    const userMealsKey = getUserMealsKey();
-    const allMeals = JSON.parse(localStorage.getItem(userMealsKey)) || {};
-
-    if (allMeals[today]) {
-      allMeals[today] = allMeals[today].filter((meal) => meal.id !== mealId);
-      localStorage.setItem(userMealsKey, JSON.stringify(allMeals));
-      console.log("✓ Meal deleted from localStorage");
-    }
-  }
-
-  function addMealToDOM(meal) {
-    const mealCard = document.createElement("div");
-    mealCard.classList.add("logged-meal-card");
-    mealCard.setAttribute("data-meal-id", Date.now());
-
-    mealCard.style.display = "flex";
-    mealCard.style.justifyContent = "space-between";
-    mealCard.style.alignItems = "center";
-    mealCard.style.backgroundColor = "rgb(245, 245, 245)";
-    mealCard.style.padding = "1.5rem";
-    mealCard.style.borderRadius = "1.5rem";
-    mealCard.style.marginBottom = "1.5rem";
-    mealCard.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
-    mealCard.style.transition = "transform 0.2s";
-    mealCard.style.fontSize = "1rem";
-
-    const textDiv = document.createElement("div");
-    textDiv.style.flex = "1";
-    textDiv.style.textAlign = "left";
-
-    const mealTypeName =
-      mealTypeInput.options[mealTypeInput.selectedIndex].text;
-
-    textDiv.innerHTML = `
-            <h4 style="margin: 0; font-size: 1.5rem; color: #333;">${meal.name}</h4>
-            <p style="font-size: 1rem; color: #555; text-transform: capitalize; margin: 0.5rem 0;">${mealTypeName}</p>
-            <p style="font-size: 0.9rem; color: #333; margin: 0;">
-                ${meal.calories} cal • ${meal.protein}g pro • ${meal.carbs}g carb • ${meal.fats}g fat
-            </p>
-        `;
-
-    const deleteButton = document.createElement("button");
-    deleteButton.classList.add("delete-btn");
-    deleteButton.textContent = "Delete";
-
-    deleteButton.style.padding = "8px 12px";
-    deleteButton.style.backgroundColor = "#ff4d4d";
-    deleteButton.style.color = "white";
-    deleteButton.style.border = "none";
-    deleteButton.style.borderRadius = "15px";
-    deleteButton.style.cursor = "pointer";
-    deleteButton.style.marginLeft = "15px";
-
-    deleteButton.addEventListener("mouseenter", () => {
-      deleteButton.style.backgroundColor = "#cc0000";
-    });
-    deleteButton.addEventListener("mouseleave", () => {
-      deleteButton.style.backgroundColor = "#ff4d4d";
-    });
-
-    mealCard.appendChild(textDiv);
-    mealCard.appendChild(deleteButton);
-
-    loggedMealContainer.appendChild(mealCard);
-  }
-
-  function resetForm() {
-    form.reset();
-    caloriesInput.value = 0;
-    proteinInput.value = 0;
-    carbsInput.value = 0;
-    fatsInput.value = 0;
-  }
-
-  function updateMealCount() {
-    const mealCount =
-      loggedMealContainer.querySelectorAll(".logged-meal-card").length;
-
-    if (mealCount === 0) {
-      noMealsMessage.style.display = "block";
-      mealCountParagraph.textContent = "0 meals logged";
-    } else {
-      noMealsMessage.style.display = "none";
-      mealCountParagraph.textContent = `${mealCount} meal${
-        mealCount > 1 ? "s" : ""
-      } logged`;
-    }
-  }
-
-  updateMealCount();
 });
-
-// ============================================
-// LOGOUT FUNCTIONALITY
-// ============================================
-logoutBtn.onclick = () => {
-  localStorage.removeItem("currentUser");
-  localStorage.removeItem("selectedCheckInDate");
-  sessionStorage.clear();
-
-  console.log(" User logged out. All session data cleared.");
-
-  // Redirect to login page
-  window.location.href = "../SIGN IN FOLDER/sign_in.html";
-};

@@ -161,7 +161,7 @@ button.active {
 
 img {
   width: 100%;
-  min-height: 5rem;
+  min-height: 4rem;
   aspect-ratio: 1 / 1;
   display: block;
   object-fit: cover;

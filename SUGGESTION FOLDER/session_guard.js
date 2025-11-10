@@ -1,34 +1,26 @@
 // ============================================
-// SESSION GUARD - PROTECTS ALL PAGES
+// NEW, REAL SESSION GUARD
+// (Paste this into all session_guard.js files)
 // ============================================
 
-// This function checks if a user is logged in
-// If not, it redirects them to the login page
 function checkUserSession() {
-  const currentUser = localStorage.getItem("currentUser");
+  // 1. Look for the "VIP Pass" (the auth token) in localStorage
+  const token = localStorage.getItem("authToken");
 
-  if (!currentUser) {
-    console.log(" No active session. Redirecting to login...");
-    window.location.href = "../SIGN IN FOLDER/sign_in.html";
+  // 2. If no token exists...
+  if (!token) {
+    console.log("No auth token found. Redirecting to login...");
+    
+    // 3. Send the user to the login page.
+    // This path goes "up" one folder (../) and then "down"
+    // into the SIGN IN FOLDER.
+    window.location.href = "../SIGN IN FOLDER/login.html"; 
     return false;
   }
 
-  try {
-    const userData = JSON.parse(currentUser);
-    if (!userData.username || !userData.email) {
-      console.log("Invalid session data. Redirecting to login...");
-      localStorage.removeItem("currentUser");
-      window.location.href = "../SIGN IN FOLDER/sign_in.html";
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.log(" Session data corrupted. Redirecting to login...");
-    localStorage.removeItem("currentUser");
-    window.location.href = "../SIGN IN FOLDER/sign_in.html";
-    return false;
-  }
+  // If a token IS found, let the user stay on the page
+  return true;
 }
 
-// Add this line to profile.html and home.html in the first <script> tag:
-// checkUserSession();
+// Run the check immediately when the script loads
+checkUserSession();
