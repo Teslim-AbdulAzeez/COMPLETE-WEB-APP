@@ -1,8 +1,7 @@
 // ============================================
-// REAL DASHBOARD.JS SCRIPT
+// ENHANCED DASHBOARD.JS SCRIPT
 // ============================================
 
-// YOUR LIVE VERCEL BACKEND URL
 const API_BASE_URL = "https://nutri-track-api.vercel.app/api";
 
 // --- DOM ELEMENTS ---
@@ -17,14 +16,14 @@ const currentDateEl = document.getElementById("currentDate");
 const dashboardHeader = document.querySelector("h1");
 const goalTextEl = document.querySelector(".goal-text");
 
-// --- STATE (to hold our data) ---
-let foodMap = new Map(); // To store foodId -> foodDetails
+// --- STATE ---
+const foodMap = new Map();
+let dailyGoal = 2000;
+
+let currentUser = null;
 
 // --- FUNCTIONS ---
 
-/**
- * Gets the "VIP Pass" (token) from localStorage.
- */
 function getAuthToken() {
   const token = localStorage.getItem("authToken");
   if (!token) {
@@ -35,61 +34,64 @@ function getAuthToken() {
 }
 
 /**
- * Sets the current date on the dashboard.
+ * Sets the current date on the dashboard
  */
 function updateCurrentDate() {
-  const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
   const today = new Date().toLocaleDateString("en-US", options);
   currentDateEl.textContent = today;
 }
 
 /**
- * Fetches ALL food data from the backend to create a "lookup map".
- * This is so we can show food names and calories from just a foodId.
+ * Fetches ALL food data from the backend to create a "lookup map"
  */
 async function loadFoodMap(token) {
   try {
     const response = await fetch(`${API_BASE_URL}/foods`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error('Failed to fetch food map');
+    if (!response.ok) throw new Error("Failed to fetch food map");
     const foods = await response.json();
     foodMap.clear();
-    foods.forEach(food => foodMap.set(food._id, food));
-    console.log('Food Map successfully loaded.');
+    foods.forEach((food) => foodMap.set(food._id, food));
+    console.log("Food Map successfully loaded.");
   } catch (error) {
-    console.error('Error loading food map:', error);
+    console.error("Error loading food map:", error);
   }
 }
 
 /**
+ * Enhanced user profile fetch with user info display
  * Fetches the user's profile to get their name and calorie goal
  */
 async function loadUserProfile(token) {
-   try {
+  try {
     const response = await fetch(`${API_BASE_URL}/users/me`, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` }
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error('Could not fetch user profile.');
-    
-    const user = await response.json();
-    dashboardHeader.textContent = `Welcome, ${user.name}!`;
-    
-    // We'll set a default goal for now, since it's not in the model
-    // In a v2, you'd add "calorieGoal" to your user model
-    const dailyGoal = 2000; 
-    goalTextEl.textContent = `Daily Goal: ${dailyGoal} cal`;
-    return dailyGoal; // Return the goal for calculations
-    
+    if (!response.ok) throw new Error("Could not fetch user profile.");
+
+    currentUser = await response.json();
+    dashboardHeader.textContent = `Welcome, ${currentUser.name}!`;
+
+    const dailyGoalFromProfile = currentUser.calorieGoal || 2000;
+    goalTextEl.textContent = `Daily Goal: ${dailyGoalFromProfile} cal`;
+    return dailyGoalFromProfile;
   } catch (error) {
-    console.error('Error loading user profile:', error);
+    console.error("Error loading user profile:", error);
     dashboardHeader.textContent = `Welcome!`;
-    return 2000; // Return a default goal
+    return 2000;
   }
 }
 
 /**
+ * Enhanced dashboard load with real-time sync listener
  * Fetches all of the user's logged meals and renders the dashboard
  */
 async function loadDashboard() {
@@ -97,32 +99,57 @@ async function loadDashboard() {
   if (!token) return;
 
   try {
-    // We need to wait for the foodMap AND user profile to load first
     await loadFoodMap(token);
-    const dailyGoal = await loadUserProfile(token);
+    dailyGoal = await loadUserProfile(token);
 
-    // Now, get the meal logs
     const response = await fetch(`${API_BASE_URL}/meals/me`, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` }
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) throw new Error('Could not fetch meals');
-    
+    if (!response.ok) throw new Error("Could not fetch meals");
+
     const allMeals = await response.json();
-    
-    // Filter for today's meals only
     const today = new Date().toDateString();
-    const todaysMeals = allMeals.filter(meal => new Date(meal.date).toDateString() === today);
+    const todaysMeals = allMeals.filter(
+      (meal) => new Date(meal.date).toDateString() === today
+    );
 
     renderMealsList(todaysMeals);
     calculateCalorieStats(todaysMeals, dailyGoal);
-    // We'll skip the weekly chart for now, it's complex
-    // renderWeeklyChart(allMeals); 
-
   } catch (error) {
-    console.error('Error loading dashboard:', error);
-    mealList.innerHTML = '<p class="empty-message">Could not load your meals. Please try logging in again.</p>';
+    console.error("Error loading dashboard:", error);
+    mealList.innerHTML =
+      '<p class="empty-message">Could not load your meals. Please try logging in again.</p>';
+  }
+}
+
+/**
+ * Separate function to refresh meals without reloading user profile
+ * This is called when the log meal page broadcasts updates
+ */
+async function refreshMeals() {
+  const token = getAuthToken();
+  if (!token) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/meals/me`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) throw new Error("Could not fetch meals");
+
+    const allMeals = await response.json();
+    const today = new Date().toDateString();
+    const todaysMeals = allMeals.filter(
+      (meal) => new Date(meal.date).toDateString() === today
+    );
+
+    renderMealsList(todaysMeals);
+    calculateCalorieStats(todaysMeals, dailyGoal);
+  } catch (error) {
+    console.error("Error refreshing meals:", error);
   }
 }
 
@@ -131,20 +158,27 @@ async function loadDashboard() {
  */
 function renderMealsList(meals) {
   if (meals.length === 0) {
-    mealList.innerHTML = '<p class="empty-message">No meals added yet. Go to "Log Meal"!</p>';
+    mealList.innerHTML =
+      '<p class="empty-message">No meals added yet. Go to "Log Meal"!</p>';
     return;
   }
-  
-  const mealsHTML = meals.map(meal => {
-    const food = foodMap.get(meal.food); // Get food details using the ID
-    const mealName = food ? food.name : 'Unknown Food';
-    const calories = food ? (food.calories * meal.servingSize).toFixed(0) : 0;
-    
-    return `
+
+  const mealsHTML = meals
+    .map((meal) => {
+      const food = foodMap.get(meal.food);
+      const mealName = food ? food.name : meal.customName || "Unknown Food";
+      const calories = food
+        ? (food.calories * meal.servingSize).toFixed(0)
+        : (meal.calories || 0).toFixed(0);
+
+      return `
       <div class="meal-item">
         <div class="meal-info">
           <h4>${mealName}</h4>
-          <p class="meal-time">${new Date(meal.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
+          <p class="meal-time">${new Date(meal.date).toLocaleTimeString(
+            "en-US",
+            { hour: "2-digit", minute: "2-digit" }
+          )}</p>
         </div>
         <div class="meal-actions">
           <span class="meal-calories">${calories} cal</span>
@@ -152,27 +186,31 @@ function renderMealsList(meals) {
         </div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
   mealList.innerHTML = mealsHTML;
 }
 
 /**
  * Calculates and renders the stats (Total Cals, Total Meals, Progress Bar)
  */
-function calculateCalorieStats(meals, dailyGoal) {
+function calculateCalorieStats(meals, goal) {
   let totalCalories = 0;
-  
-  meals.forEach(meal => {
+
+  meals.forEach((meal) => {
     const food = foodMap.get(meal.food);
     if (food) {
-      totalCalories += (food.calories * meal.servingSize);
+      totalCalories += food.calories * meal.servingSize;
+    } else if (meal.calories) {
+      // Handle custom meals that don't have a food reference
+      totalCalories += meal.calories;
     }
   });
 
   totalCaloriesEl.textContent = totalCalories.toFixed(0);
   totalMealsEl.textContent = meals.length;
 
-  const progressPercentage = Math.min((totalCalories / dailyGoal) * 100, 100);
+  const progressPercentage = Math.min((totalCalories / goal) * 100, 100);
   calorieProgressEl.style.width = `${progressPercentage}%`;
   calorieProgressEl.textContent = `${Math.round(progressPercentage)}%`;
 }
@@ -186,54 +224,50 @@ async function deleteMeal(mealId) {
 
   try {
     const response = await fetch(`${API_BASE_URL}/meals/${mealId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
     });
-    
-    if (!response.ok) throw new Error('Failed to delete');
-    
-    // Success! Reload the dashboard to show the change
-    loadDashboard(); 
 
+    if (!response.ok) throw new Error("Failed to delete");
+
+    refreshMeals();
   } catch (error) {
-    console.error('Error deleting meal:', error);
-    alert('Could not delete meal.');
+    console.error("Error deleting meal:", error);
+    alert("Could not delete meal.");
   }
 }
 
 // --- INITIALIZE THE PAGE ---
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Dashboard initialized");
-  
-  // 1. The session_guard.js script in your HTML already ran
-  
-  // 2. Set the date
+
   updateCurrentDate();
-  
-  // 3. Load all REAL data from the backend
   loadDashboard();
 
-  // 4. Disable the "Add Meal" form and make it a link
+  const mealSync = window.mealSync; // Declare mealSync variable
+  mealSync.initializeListener();
+  mealSync.onMealUpdate(() => {
+    refreshMeals();
+  });
+
   if (addMealForm) {
     const button = addMealForm.querySelector('button[type="submit"]');
-    // Disable all inputs in the form
-    addMealForm.querySelectorAll('input, select').forEach(el => el.disabled = true);
-    // Change button text and function
-    button.textContent = 'Go to Log Meal Page';
-    addMealForm.addEventListener('submit', (e) => {
+    addMealForm
+      .querySelectorAll("input, select")
+      .forEach((el) => (el.disabled = true));
+    button.textContent = "Go to Log Meal Page";
+    addMealForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      window.location.href = '../LOG MEAL FOLDER/logmeal.html';
+      window.location.href = "../LOG MEAL FOLDER/logmeal.html";
     });
   }
 
-  // 5. Set up logout
   logoutBtn.onclick = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("currentUser");
     window.location.href = "../SIGN IN FOLDER/login.html";
   };
-  
-  // 6. Add a single event listener for all delete buttons
+
   mealList.addEventListener("click", (event) => {
     if (event.target.classList.contains("btn-delete")) {
       const mealId = event.target.dataset.id;
